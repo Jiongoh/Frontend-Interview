@@ -48,7 +48,7 @@ DOCTYPE是一种在HTML文档开头声明的指令，用于**告知浏览器正�
 
 总结：主要区别在于defer脚本会按照顺序加载，并在文档解析完成后执行。而async脚本会并行加载且立刻执行（执行动作会阻塞文档解析）。二者的加载时间都不会阻塞文档的解析。
 
-![image-20230528163226958](C:\Users\Jiong\AppData\Roaming\Typora\typora-user-images\image-20230528163226958.png)
+![asyncAnddefer](./asyncAnddefer.png)
 
 ------
 
