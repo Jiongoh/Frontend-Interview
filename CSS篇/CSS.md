@@ -31,7 +31,7 @@
   2. 文本系列：text-indent、text-align、line-height、word-spacing、letter-spacing、text-transform、color
   3. 元素可见性：visibility
   4. 列表布局属性：list-style
-  5. 光标属性
+  5. 光标属性：cursor
 
 - 不可继承属性：
   1. display
