@@ -117,7 +117,7 @@ React.memo（HOC）包裹的组件表示纯组件，其作用是当组件更新�
 
 ------
 
-#### 13.  React中可以在render访问refs吗？为什么
+#### 13.  React中可以在render访问ref吗？为什么
 
 不可以，render阶段就是在渲染DOM元素，此时真正的DOM元素还没有生成。
 
