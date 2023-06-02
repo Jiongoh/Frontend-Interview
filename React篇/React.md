@@ -632,8 +632,8 @@ setNum(num);
 
 | 类组件                   | 函数组件                                                     |
 | ------------------------ | ------------------------------------------------------------ |
-| constructor              | useState中定义的初始化状态                                   |
-| getDerivedStateFromProps | useState中定义的更新状态函数                                 |
+| constructor              | useState中定义的状态快照                                     |
+| getDerivedStateFromProps | useState中定义的状态快照的更新函数                           |
 | shouldComponentUpdate    | useMemo                                                      |
 | render                   | 函数本身                                                     |
 | componentDidMount        | useEffect的第二个参数填空数组                                |
