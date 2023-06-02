@@ -393,4 +393,326 @@ react的父级组件的render函数重新渲染会引起子组件的render方法
 
 ------
 
-#### 35. 
+#### 35. 对Redux的理解
+
+Redux 提供了一个叫 store 的统一仓储库，组件通过 dispatch 将 state 直接传入store，不用通过其他的组件。并且组件通过 subscribe 从 store获取到 state 的改变。使用了 Redux，所有的组件都可以从 store 中获取到所需的 state，他们也能从store 获取到 state 的改变。
+
+------
+
+#### 36. Redux 原理及工作流程
+
+- 原理：Redux的原理基于三个概念——state、action、reducer
+  1. state：整个应用的状态都存储在一个js对象中，即"store"
+  2. action：描述发生事件类型的普通js对象，用于通知应用程序状态的变化
+  3. reducer：是一个纯函数，接收当前状态（state）和新动作（action），然后计算并返回新的状态。
+- 工作流程：
+  1. 组件通过dispatch方法将类型（type）和储存当前状态的载荷（payload）的action发送给store
+  2. store接收action并将action转发给reducer
+  3. reducer根据action的type对状态进行更新并将新状态返回给store
+  4. store将新状态替换掉旧状态，并通知所有订阅该状态的组件更新
+
+------
+
+#### 37. Redux中的异步请求
+
+使用react-thunk中间件（RTK中默认开启）
+
+- 使用原生redux-thunk：
+
+  1. 配置中间件，在store的创建中配置
+
+     ```js
+     import {createStore, applyMiddleware, compose} from 'redux';
+     import reducer from './reducer';
+     import thunk from 'redux-thunk'
+     // 设置中间件
+     const enhancer = composeEnhancers(
+       applyMiddleware(thunk)
+     );
+     
+     const store = createStore(reducer, enhancer);
+     
+     export default store;
+     ```
+
+  2. 创建异步的action函数
+
+     ```js
+     // 不再分发普通的action对象，而是分发异步的action函数
+     const fetchData = () => {
+         return (dispath) => {
+             // 发送请求初始化的action
+             dispath({
+                 type: "pending"
+             })
+             axios.get('/api/data').then(response => {
+                 dispath({
+                     // 分发请求成功的action
+                     type: "fulfilled",
+                     payload: response.data
+                 })
+             }).catch(err => {
+                 // 分发请求失败的action
+                 dispath({
+                     type: "rejected",
+                     payload: err.message
+                 })
+             });
+     
+         }
+     }
+     ```
+
+  3. reducer中正常处理
+
+  4. 在组件中使用dispatch分发异步的action函数，而不是普通的action对象
+
+     ```js
+     import { fetchData } from "./userActions"
+     const dispatch = useDispatch();
+     dispatch(fetchData())
+     ```
+
+- 使用redux toolkit：
+
+  1. 引入RTK相关函数和库，将独立的reducer模块配置入store中
+
+     ```js
+     import { createSlice, configureStore } from '@reduxjs/toolkit';
+     const store = configureStore({
+         reduer:{
+             data:dataSlice.reducer
+         }
+     })
+     ```
+
+  2. 使用createAsyncThunk函数发送异步请求，该函数传入两个参数，第一个是action的type，第二个异步的函数，返回值是异步的action函数
+
+     ```js
+     import { createAsyncThunk } from '@reduxjs/toolkit';
+     const fetchData = createAsyncThunk('request',
+         async () => {
+             const response = await fetch('/api/data');
+             const data = await response.json();
+             return data;
+         }
+     );
+     ```
+
+  3. slice中的reducer可以根据普通Promise对象状态的关键词来确定此时的action的类型，分别处理state。
+
+  4. 在组件中使用dispatch分发异步的action函数，而不是普通的action对象
+
+     ```js
+     import { fetchData } from "./userActions"
+     const dispatch = useDispatch();
+     dispatch(fetchData())
+     ```
+
+------
+
+#### 38. Redux 中间件是什么
+
+Redux中间件通常是一个函数，提供的是位于 action 被发起之后，到达 reducer 之前的扩展点，也就是说store将action发送到reducer之前的一个时间点，在这一环节可以做一些"副作用"的操作，如异步请求、打印日志等。
+
+------
+
+#### 39. Redux和变量挂载到 window 中有什么区别
+
+- 可维护性：直接将变量挂载到window上，使得变量的来源和用途不明确，导致代码难以理解和维护；而redux提供了统一的状态管理机制，让状态的变更和访问变得更加可控
+- 命名冲突：window对象是一个全局的命名空间，很可能会发送变量名冲突的问题，导致错误和意外的发生；而在redux中通过派发action触发状态更新，通过reducer处理更新，这种明确的数据流动分享有利于追踪和调试
+- Time travel调试：使用window存储状态，无法追踪状态变化的来源；而redux支持状态回溯调试，通过Redux DevTools可以查看每一次action的派发的时间点和状态的变化，对于调试应用有很大的帮助
+
+------
+
+#### 40. Redux和Vuex的异同
+
+- 相同点：
+  1. 单一数据来源：都遵循一个原则，就是把应用程序的状态存在一个全局的对象中
+  2. 不可变性：都鼓励使用不可变的数据，即创建新的对象或数组来替换之前数据，而不是直接修改之前的数据
+- 不同点：
+  1. Vuex改进了Redux中的Action和Reducer函数，简化了reducer的流程，无需switch，只需在对应的mutation函数里改变state值即可（RTK中的reducer的设计类似于Vuex的mutation）
+  2. Vuex由于Vue自动重新渲染的特性，只要生成新的State即可，组件会自动更新数据
+
+------
+
+#### 41. Redux的connect的作用
+
+connect负责连接React和Redux
+
+- 获取state：connect 通过 context获取 Provider 中的 store，通过` store.getState()` 获取整个store tree 上所有state
+- 本质上是HOC，通过接收mapStateToProps和mapDispatchToProps两个参数将Redux的状态和行为以props的形式传递给React组件
+- 监听state tree：connect缓存了store tree中state的状态，通过当前state状态 和变更前 state 状态进行比较，从而确定是否调用 `this.setState()`方法触发Connect及其子组件的重新渲染
+
+------
+
+#### 42. Hooks的原理及使用场景
+
+- 原理：hooks基于函数组件和闭包，当函数组件被调用时，react会创建Fiber的数据结构来表示组件的状态和组件树结构，hooks使用fiber结构来管理状态和副作用
+- 使用场景：React官方提供了一些钩子函数（如useState、useEffect等）来声明组件状态以及函数组件的生命周期相关的副作用，开发者还可以自定义hook满足各自的需求
+
+------
+
+#### 43. 为什么 useState 要使用数组而不是对象
+
+先来看看使用数组和使用对象写发的话应该怎么写：
+
+```jsx
+const [count, setCount] = useState(0)
+```
+
+```jsx
+const { state, setState } = useState(false);
+const { state: counter, setState: setCounter } = useState(0) 
+```
+
+这关系到了ES6的解构赋值，如果 useState 返回的是数组，那么使用者可以对数组中的元素命名，代码看起来也比较干净；如果 useState 返回的是对象，在解构对象的时候必须要和 useState 内部实现返回的对象同名，想要正常使用的话，必须得设置别名才能使用返回值
+
+------
+
+#### 43. Hooks解决了哪些问题？
+
+- 在组件之间复用状态逻辑很难：React 没有提供将可复用性行为"附加”到组件的途径，解决此类问题可以使用 render props 和 高阶组件。但是这类方案需要重新组织组件结构，这可能会很麻烦，并且会使代码难以理解。
+- 复杂组件变得难以理解：在组件中，每个生命周期常常包含一些不相关的逻辑。例如，组件常常在 componentDidMount 和 componentDidUpdate 中获取数据。但是，同一个 componentDidMount 中可能也包含很多其它的逻辑，如设置事件监听，而之后需在 componentWillUnmount 中清除。相互关联且需要对照修改的代码被进行了拆分，而完全不相关的代码却在同一个方法中组合在一起。如此很容易产生 bug，并且导致逻辑不一致。
+- 难以理解的 class：class 是学习 React 的一大屏障。我们必须去理解 JavaScript 中 this 的工作方式，这与其他语言存在巨大差异。还不能忘记绑定事件处理器。
+
+------
+
+#### 44. React Hook 的使用限制有哪些？
+
+- 不要在循环、条件或嵌套函数中调用 Hook：因为 Hooks 的设计是基于数组实现。在调用时按顺序加入数组中，如果使用循环、条件或嵌套函数很有可能导致数组取值错位，执行错误的 Hook。当然，实质上 React 的源码里不是数组，是链表。
+- 只能在函数组件中使用Hooks：Hooks的实现基于js中函数的闭包，但在类组件中没有这种概念。
+
+------
+
+#### 45. useEffect 与 useLayoutEffect的异同
+
+- 相同点：都React定义的Hooks，使用方式都一样，都是用于处理副作用，包括修改DOM、设置订阅、操作定时器等
+
+- 不同点：
+
+  1. 使用场景：useEffect 在React的渲染过程中是被异步调用的，用于绝大多数场景；而useLayoutEffect会在所有的DOM变更之后同步调用，主要用于处理 DOM 操作、调整样式、避免页面闪烁等问题。但也正因为是同步处理，所以需要避免在 useLayoutEffect 做计算量较大的耗时任务从而造成阻塞。
+  2. 执行时机：useEffect的执行时机是浏览器渲染完成之后，而useLayoutEffect的执行时机是在浏览器渲染完成之前执行的，也就是说useLayoutEffect总是比useEffect先执行
+
+  > 绝大部分情况下，先用 useEffect，一般问题不大；如果页面有异常，再直接替换为 useLayoutEffect即可
+
+------
+
+#### 46. 使用useState更新数组时需要注意什么
+
+使用useState初始化了一个状态数组/对象，使用push、pop / object.attribute=values、delete object.attribute等数组/对象修改方法在setState是不会起作用的，应该用结构赋值的方式将数组/对象重新赋值，再setState才能让React获得其值。例如：
+
+```js
+const [count, setCount] = useState([0, 1, 2]);
+const {num,setNum} = useState({a: 1})
+// 不起作用的写法：
+// count.push(3);
+// setCount(count);
+// num.b = 2;
+// setNum(num);
+
+// 正确的写法：
+count = [...count, 3];
+setCount(count);
+num = {...num,b: 2};
+setNum(num);
+```
+
+造成这种现象的原因：
+
+当使用useState初始化一个引用类型的状态时，React会追踪该引用，并在状态更新时比较新旧引用，再决定要不要重新渲染。如果直接在原先的引用类型数据上添加、删除或者修改属性，其原始引用并没有发生改变，React无法察觉到对象的属性发生修改。因此我们需要创建一个新的引用类型状态，常见的方法有解构赋值，深拷贝等，再赋值给之前的引用，确保React能检测到状态的变化
+
+------
+
+#### 47.  React Hooks和生命周期的关系
+
+生命周期属于类组件的概念，函数组件一旦开始渲染就不能中断，因此不存在生命周期的概念。但是React团队提供了一些强大的hooks，让我们在函数组件中也能使用到类似生命周期钩子的功能。
+
+以下是类组件的生命周期和函数组件的hooks对应的关系表：
+
+| 类组件                   | 函数组件                                                     |
+| ------------------------ | ------------------------------------------------------------ |
+| constructor              | useState中定义的初始化状态                                   |
+| getDerivedStateFromProps | useState中定义的更新状态函数                                 |
+| shouldComponentUpdate    | useMemo                                                      |
+| render                   | 函数本身                                                     |
+| componentDidMount        | useEffect的第二个参数填空数组                                |
+| componentDidUpdate       | useEffect的第二个参数填入需要监视的状态组成的数组            |
+| componentWillUnmount     | useEffect的第一个参数是回调函数，在回调函数内再返回一个清理函数则会触发 |
+| componentDidCatch        | 无                                                           |
+| getDerivedStateFromError | 无                                                           |
+
+------
+
+#### 48. 对虚拟DOM的理解
+
+虚拟DOM本质上是一个Js对象，通过对象的形式描绘真正的DOM结构，配合不同的渲染工具，使跨平台渲染成为可能。通过事务处理机制，将多次DOM修改的结果一次性的更新到页面上，从而有效的减少页面渲染的次数，减少修改DOM的重绘重排次数，提高渲染性能。
+
+------
+
+#### 49. React的Diff算法的原理与React Fiber架构中算法的变化
+
+React Diff算法的原理是通过递归比较两棵虚拟DOM树的节点，找出他们的差异，并将差异更行到真实DOM树上，这样可以避免整个更新真实DOM树，提高性能。但是美中不足在于递归算法存在不可中断性，如果虚拟DOM树过于庞大会导致页面无法响应。
+
+但是在最新的Reat Fiber架构中，React团队对算法做了一些优化，主要表现在将任务切片和优先级调度上，实际上就是将两棵虚拟DOM树同层的节点拆分成一个个Fiber结构再比较，并动态的调整任务调度的优先级，在浏览器的空闲时间工作，如果有用户交互，则将主线程交还给用户，以提供更好的用户体验。
+
+------
+
+#### 50. React和Vue中的key的作用
+
+在两大框架中，keys都用于追踪哪些元素被修改、被添加或者被移除的辅助标识。在两者的Diff算法中也会借助key值来判断该元素是新创建的还是别处移动来的，从而减少不必要的元素渲染。此外React 还需要借助key值来判断元素与本地状态的关联关系。
+
+------
+
+#### 51. 虚拟DOM与直接操作真实DOM相比，哪一个效率更高
+
+这种需要分情况讨论，如果只是操作一个按钮的文字，通过虚拟DOM修改完全不可能比得过直接操作真实DOM。虚拟DOM相较于真实DOM真正的优越之处在于能够提供给开发者更舒适的开发前提的前提下，还能保持不错的性能。
+
+------
+
+#### 52. React的严格模式
+
+StrictMode是一个用来突出显示应用程序中潜在问题的工具。与 `Fragment` 一样，`StrictMode` 不会渲染任何可见的 UI。它为其后代元素触发额外的检查和警告。 可以为应用程序的任何部分启用严格模式。只需要在用`<React.StrictMode></React.StrictMode>`包裹住想开启严格模式的组件即可。
+
+StrictMode有助于：
+
+- 识别不安全的生命周期
+- 关于使用过时字符串 ref API 的警告
+- 关于使用废弃的 findDOMNode 方法的警告
+- 检测意外的副作用
+- 检测过时的 context API
+
+------
+
+#### 53. 在React中遍历的方法
+
+- 遍历数组：map，forEach
+- 遍历对象：用`Object.entries()`（需要对象的键值对）/`[...object]`（只需要对象的值）把对象转化成数组再用map遍历，for...in
+
+------
+
+#### 54. 对React SSR和Vue SSR的理解
+
+即由服务端直接完成页面的渲染，再通过网络交由客户端展示。两大框架的基本工作流程如下：
+
+- 服务器接收到客户端的请求
+- 服务器创建初始的React/Vue组件树
+- 服务器生成HTML
+- 服务器将生产的HTML作为响应发送给客户端
+- 客户端上的React/Vue组件重新挂载并接管页面交互
+
+SSR的优势：
+
+- 利于SEO优化
+- 所有模板、图片等资源都存在服务器端
+- 一个html返回所有数据
+- 减少HTTP请求
+- 响应快、用户体验好、首屏渲染快
+
+SSR的劣势：
+
+- 服务器端压力大
+- 开发条件受限，React SSR中只能使用`constructor()`、`getDerivedDefaultProps()`和`render()`三个钩子，Vue SSR中只能使用`beforeCreate()`和`Created()`两个钩子
+- 学习成本高，需要开发者具有全栈开发的能力
+
+#### 
