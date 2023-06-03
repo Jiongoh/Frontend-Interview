@@ -81,7 +81,7 @@ CDN一般会用来托管Web资源（包括文本、图片和脚本等），可�
   ```jsx
   import { lazy, Suspense } from 'react';
   <Suspense>
-      <Router path='/about' component={lazy(() => import('/about.jsx'))} />
+      <Router path='/about' component={lazy(() => import('./about.jsx'))} />
   </Suspense>
   ```
 
