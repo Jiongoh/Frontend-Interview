@@ -2,7 +2,7 @@
 
 - [x] HTML
 - [ ] CSS
-- [ ] JS
+- [x] JS
 - [ ] Vue
 - [x] React
 - [ ] 计网
